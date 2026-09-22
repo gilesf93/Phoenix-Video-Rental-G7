@@ -83,3 +83,13 @@ Stop the server by pressing `Ctrl+C` in the terminal.
 4. Commit and push the feature branch to GitHub.
 5. Create a pull request for team review.
 6. Merge changes only after approval.
+
+## Running Tests
+
+Using Django's TestCase framework, make sure the virtual environment is active and run:
+
+```bash
+python manage.py test
+```
+
+A successful test will display `OK`.
