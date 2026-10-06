@@ -3,19 +3,85 @@
 {% block content %}
 <h1>Movie Catalog</h1>
 
-{% for movie in movies %}
-    <div>
-        <h3>
-            <a href="{% url 'catalog:movie_detail' movie.pk %}">
-                {{ movie.title }}
-            </a>
-        </h3>
+<form method="get" class="mb-4">
+    <div class="row g-3">
 
-        <p>Release Year: {{ movie.release_year }}</p>
-        <p>Rating: {{ movie.mpaa_rating }}</p>
+        <div class="col-md-4">
+            <label for="title" class="form-label">Search by Title</label>
+            <input
+                type="text"
+                name="title"
+                id="title"
+                class="form-control"
+                value="{{ title_query }}"
+                placeholder="Enter movie title">
+        </div>
+
+        <div class="col-md-4">
+            <label for="genre" class="form-label">Genre</label>
+            <select name="genre" id="genre" class="form-select">
+                <option value="">All Genres</option>
+
+                {% for genre in genres %}
+                    <option value="{{ genre.id }}"
+                        {% if genre_query == genre.id|stringformat:"s" %}selected{% endif %}>
+                        {{ genre.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-4">
+            <label for="availability" class="form-label">Availability</label>
+            <select name="availability" id="availability" class="form-select">
+                <option value="">All Availability</option>
+
+                {% for value, label in availability_choices %}
+                    <option value="{{ value }}"
+                        {% if availability_query == value %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
     </div>
+
+    <div class="mt-3">
+        <button type="submit" class="btn btn-primary">Search / Filter</button>
+        <a href="{% url 'catalog:movie_list' %}" class="btn btn-secondary">
+            Clear Filters
+        </a>
+    </div>
+</form>
+
+{% for movie in movies %}
+    <div class="card mb-3">
+        <div class="card-body">
+
+            <h3 class="card-title">
+                <a href="{% url 'catalog:movie_detail' movie.pk %}">
+                    {{ movie.title }}
+                </a>
+            </h3>
+
+            <p><strong>Release Year:</strong> {{ movie.release_year }}</p>
+            <p><strong>Rating:</strong> {{ movie.mpaa_rating }}</p>
+
+            <p>
+                <strong>Genres:</strong>
+                {% for genre in movie.genres.all %}
+                    {{ genre.name }}{% if not forloop.last %}, {% endif %}
+                {% empty %}
+                    No genre listed
+                {% endfor %}
+            </p>
+
+        </div>
+    </div>
+
 {% empty %}
-    <p>No movies are currently available.</p>
+    <p>No movies matched your search.</p>
 {% endfor %}
 
 {% endblock %}
