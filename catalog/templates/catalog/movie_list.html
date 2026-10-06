@@ -1,0 +1,21 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+<h1>Movie Catalog</h1>
+
+{% for movie in movies %}
+    <div>
+        <h3>
+            <a href="{% url 'catalog:movie_detail' movie.pk %}">
+                {{ movie.title }}
+            </a>
+        </h3>
+
+        <p>Release Year: {{ movie.release_year }}</p>
+        <p>Rating: {{ movie.mpaa_rating }}</p>
+    </div>
+{% empty %}
+    <p>No movies are currently available.</p>
+{% endfor %}
+
+{% endblock %}

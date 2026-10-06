@@ -1,0 +1,22 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+<h1>{{ movie.title }}</h1>
+
+<p><strong>Release Year:</strong> {{ movie.release_year }}</p>
+<p><strong>Runtime:</strong> {{ movie.runtime_minutes }} minutes</p>
+<p><strong>Rating:</strong> {{ movie.mpaa_rating }}</p>
+
+<p><strong>Genres:</strong>
+    {% for genre in movie.genres.all %}
+        {{ genre.name }}{% if not forloop.last %}, {% endif %}
+    {% empty %}
+        No genre listed
+    {% endfor %}
+</p>
+
+<p><strong>Description:</strong> {{ movie.description }}</p>
+
+<a href="{% url 'catalog:movie_list' %}">Back to Movie Catalog</a>
+
+{% endblock %}
