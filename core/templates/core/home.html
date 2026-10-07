@@ -3,12 +3,32 @@
 {% block title %}Home - Phoenix Video Rental{% endblock %}
 
 {% block content %}
-
 <div class="text-center">
     <h1>Welcome to Phoenix Video Rental</h1>
+
     <p class="lead">
         Browse our movies and manage your rentals.
     </p>
-</div>
 
+    {% if user.is_authenticated %}
+        <p>Welcome, {{ user.username }}!</p>
+
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-secondary">
+                Log Out
+            </button>
+        </form>
+    {% else %}
+        <p>
+            <a class="btn btn-primary" href="{% url 'login' %}">
+                Log In
+            </a>
+
+            <a class="btn btn-outline-primary" href="{% url 'register' %}">
+                Create an Account
+            </a>
+        </p>
+    {% endif %}
+</div>
 {% endblock %}
