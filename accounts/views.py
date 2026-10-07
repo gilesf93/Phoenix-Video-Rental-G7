@@ -1,3 +1,4 @@
+from django.contrib.auth.models import Group
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods
 
@@ -13,7 +14,9 @@ def register(request):
     form = CustomerRegistrationForm(request.POST or None)
 
     if request.method == "POST" and form.is_valid():
-        form.save()
+        user = form.save()
+        customer_group, _ = Group.objects.get_or_create(name="Customer")
+        user.groups.add(customer_group)
         return redirect("login")
 
     return render(request, "accounts/register.html", {"form": form})
