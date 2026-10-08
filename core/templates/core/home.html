@@ -13,7 +13,7 @@
     {% if user.is_authenticated %}
         <p>Welcome, {{ user.username }}!</p>
 
-        <form method="post" action="{% url 'logout' %}">
+        <form method="post" action="{% url 'accounts:logout' %}">
             {% csrf_token %}
             <button type="submit" class="btn btn-outline-secondary">
                 Log Out
@@ -21,11 +21,11 @@
         </form>
     {% else %}
         <p>
-            <a class="btn btn-primary" href="{% url 'login' %}">
+            <a class="btn btn-primary" href="{% url 'accounts:login' %}">
                 Log In
             </a>
 
-            <a class="btn btn-outline-primary" href="{% url 'register' %}">
+            <a class="btn btn-outline-primary" href="{% url 'accounts:register' %}">
                 Create an Account
             </a>
         </p>

@@ -27,5 +27,4 @@ urlpatterns = [
     path("accounts/", include("accounts.urls")),
     path("movies/", include("catalog.urls")),
     path("", include("core.urls")),
-    path("accounts/", include("accounts.urls")),
 ]

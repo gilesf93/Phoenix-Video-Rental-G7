@@ -7,7 +7,7 @@ User = get_user_model()
 
 class CustomerRegistrationTests(TestCase):
     def setUp(self):
-        self.register_url = reverse("register")
+        self.register_url = reverse("accounts:register")
         self.valid_data = {
             "username": "newcustomer",
             "email": "customer@example.com",
@@ -25,7 +25,7 @@ class CustomerRegistrationTests(TestCase):
     def test_valid_registration_creates_customer(self):
         response = self.client.post(self.register_url, self.valid_data)
 
-        self.assertRedirects(response, reverse("login"))
+        self.assertRedirects(response, reverse("accounts:login"))
         self.assertTrue(
             User.objects.filter(
                 username="newcustomer",
@@ -113,7 +113,7 @@ class LoginLogoutTests(TestCase):
 
     def test_valid_login(self):
         response = self.client.post(
-            reverse("login"),
+            reverse("accounts:login"),
             {"username": "testuser", "password": self.password},
         )
         self.assertRedirects(response, reverse("core:home"))
@@ -121,7 +121,7 @@ class LoginLogoutTests(TestCase):
 
     def test_invalid_login(self):
         response = self.client.post(
-            reverse("login"),
+            reverse("accounts:login"),
             {"username": "testuser", "password": "WrongPassword"},
         )
         self.assertEqual(response.status_code, 200)
@@ -129,7 +129,7 @@ class LoginLogoutTests(TestCase):
 
     def test_logout(self):
         self.client.login(username="testuser", password=self.password)
-        response = self.client.post(reverse("logout"))
+        response = self.client.post(reverse("accounts:logout"))
         self.assertRedirects(response, reverse("core:home"))
         self.assertFalse(response.wsgi_request.user.is_authenticated)
         self.assertNotIn("_auth_user_id", self.client.session)

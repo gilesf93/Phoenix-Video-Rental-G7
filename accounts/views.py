@@ -18,7 +18,7 @@ def register(request):
         user = form.save()
         customer_group, _ = Group.objects.get_or_create(name="Customer")
         user.groups.add(customer_group)
-        return redirect("login")
+        return redirect("accounts:login")
 
     return render(request, "accounts/register.html", {"form": form})
 
