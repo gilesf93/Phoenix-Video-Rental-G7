@@ -32,6 +32,9 @@ class CustomerRegistrationTests(TestCase):
                 email="customer@example.com",
             ).exists()
         )
+        user = User.objects.get(username="newcustomer")
+
+        self.assertTrue(user.groups.filter(name="Customer").exists())
 
     def test_email_is_required(self):
         registration_data = self.valid_data.copy()
@@ -98,3 +101,35 @@ class CustomerRegistrationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context["form"].has_error("password2"))
         self.assertFalse(User.objects.filter(username="newcustomer").exists())
+
+
+class LoginLogoutTests(TestCase):
+    def setUp(self):
+        self.password = "Password123!"
+        self.user = User.objects.create_user(
+            username="testuser",
+            password=self.password,
+        )
+
+    def test_valid_login(self):
+        response = self.client.post(
+            reverse("login"),
+            {"username": "testuser", "password": self.password},
+        )
+        self.assertRedirects(response, reverse("core:home"))
+        self.assertTrue(response.wsgi_request.user.is_authenticated)
+
+    def test_invalid_login(self):
+        response = self.client.post(
+            reverse("login"),
+            {"username": "testuser", "password": "WrongPassword"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.wsgi_request.user.is_authenticated)
+
+    def test_logout(self):
+        self.client.login(username="testuser", password=self.password)
+        response = self.client.post(reverse("logout"))
+        self.assertRedirects(response, reverse("core:home"))
+        self.assertFalse(response.wsgi_request.user.is_authenticated)
+        self.assertNotIn("_auth_user_id", self.client.session)
