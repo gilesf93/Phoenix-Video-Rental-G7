@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods
@@ -17,6 +18,15 @@ def register(request):
         user = form.save()
         customer_group, _ = Group.objects.get_or_create(name="Customer")
         user.groups.add(customer_group)
-        return redirect("login")
+        return redirect("accounts:login")
 
     return render(request, "accounts/register.html", {"form": form})
+
+
+@login_required
+def profile_view(request):
+    return render(
+        request,
+        "accounts/profile.html",
+        {"customer": request.user},
+    )

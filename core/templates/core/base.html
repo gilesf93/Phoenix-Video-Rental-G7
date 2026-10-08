@@ -43,18 +43,32 @@
                         <a class="nav-link" href="#">Customer History</a>
                     </li>
 
-                {% if user.is_authenticated %}
+
+
+
+
+                    {% if user.is_authenticated %}
                     <li class="nav-item">
-                        <form method="post" action="{% url 'logout' %}">
+                        <a class="nav-link" href="{% url 'accounts:profile' %}">
+                            Profile
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <form method="post" action="{% url 'accounts:logout' %}">
                             {% csrf_token %}
-                            <button class="btn btn-link nav-link" type="submit">Log Out</button>
+                            <button class="btn btn-link nav-link" type="submit">
+                                Log Out
+                            </button>
                         </form>
                     </li>
-                {% else %}
+                    {% else %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'login' %}">Log In</a>
+                        <a class="nav-link" href="{% url 'accounts:login' %}">
+                            Log In
+                        </a>
                     </li>
-                {% endif %}
+                    {% endif %}
                 </ul>
             </div>
 
