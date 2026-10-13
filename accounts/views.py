@@ -27,6 +27,6 @@ def register(request):
 def profile_view(request):
     return render(
         request,
-        "accounts/profile.html",
+        "profile.html",
         {"customer": request.user},
     )
