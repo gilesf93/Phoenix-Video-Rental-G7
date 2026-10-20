@@ -75,3 +75,14 @@ class MovieCopyModelTests(TestCase):
             movie_copy.status,
             MovieCopy.AvailabilityStatus.RENTED,
         )
+
+    def test_inventory_copy_can_be_deleted_when_not_rented(self):
+        movie_copy = MovieCopy.objects.create(
+            movie=self.movie,
+            copy_number=1,
+        )
+        copy_pk = movie_copy.pk
+
+        movie_copy.delete()
+
+        self.assertFalse(MovieCopy.objects.filter(pk=copy_pk).exists())
