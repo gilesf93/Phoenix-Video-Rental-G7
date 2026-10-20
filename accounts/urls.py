@@ -14,4 +14,22 @@ urlpatterns = [
     ),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("profile/", views.profile_view, name="profile"),
+
+    path("staff/customers/", views.staff_customers, name="staff_customers"),
+    path(
+        "staff/customers/add/",
+        views.staff_customer_create,
+        name="staff_customer_create",
+    ),
+    path(
+        "staff/customers/<int:user_id>/edit/",
+        views.staff_customer_update,
+        name="staff_customer_update",
+    ),
+    path(
+        "staff/customers/<int:user_id>/delete/",
+        views.staff_customer_delete,
+        name="staff_customer_delete",
+    ),
+
 ]
