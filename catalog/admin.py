@@ -3,8 +3,12 @@ from django.contrib import admin
 from .models import Genre, Movie, MovieCopy
 
 admin.site.register(Genre)
-admin.site.register(Movie)
-
+@admin.register(Movie)
+class MovieAdmin(admin.ModelAdmin):
+    list_display = ("title", "release_year", "mpaa_rating")
+    search_fields = ("title",)
+    list_filter = ("release_year", "mpaa_rating")
+    ordering = ("title",)
 
 @admin.register(MovieCopy)
 class MovieCopyAdmin(admin.ModelAdmin):
