@@ -1,0 +1,61 @@
+{% extends "core/base.html" %}
+
+{% block title %}Rental Dashboard{% endblock %}
+
+{% block content %}
+<h1>Rental Dashboard</h1>
+
+<h2>Active Rentals</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Customer</th>
+            <th>Movie</th>
+            <th>Rental Date</th>
+            <th>Due Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for rental in active_rentals %}
+        <tr>
+            <td>{{ rental.customer.user.username }}</td>
+            <td>{{ rental.movie_copy.movie.title }}</td>
+            <td>{{ rental.rental_date|date:"M d, Y" }}</td>
+            <td>{{ rental.due_date|date:"M d, Y" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4">No active rentals found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2>Overdue Rentals</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Customer</th>
+            <th>Movie</th>
+            <th>Rental Date</th>
+            <th>Due Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for rental in overdue_rentals %}
+        <tr>
+            <td>{{ rental.customer.user.username }}</td>
+            <td>{{ rental.movie_copy.movie.title }}</td>
+            <td>{{ rental.rental_date|date:"M d, Y" }}</td>
+            <td>{{ rental.due_date|date:"M d, Y" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4">No overdue rentals found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
