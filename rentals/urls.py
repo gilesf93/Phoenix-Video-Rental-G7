@@ -1,4 +1,5 @@
 from django.urls import path
+
 from . import views
 
 app_name = "rentals"
@@ -8,5 +9,10 @@ urlpatterns = [
         "staff/dashboard/",
         views.staff_rental_dashboard,
         name="staff_rental_dashboard",
+    ),
+    path(
+        "staff/rentals/<int:rental_id>/return/",
+        views.return_rental,
+        name="return_rental",
     ),
 ]
