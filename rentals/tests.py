@@ -162,6 +162,7 @@ class StaffRentalDashboardTests(TestCase):
         self.assertIn("/admin/login/", response.url)
 
         self.active_rental.refresh_from_db()
+
         self.assertIsNone(self.active_rental.return_date)
         self.assertEqual(
             self.active_rental.status,
@@ -192,3 +193,108 @@ class StaffRentalDashboardTests(TestCase):
         response = self.client.post(return_url)
 
         self.assertEqual(response.status_code, 404)
+
+
+class InventoryStatusSignalTests(TestCase):
+    def setUp(self):
+        User = get_user_model()
+
+        self.customer_user = User.objects.create_user(
+            username="inventorycustomer",
+            password="TestPassword123!",
+        )
+
+        self.customer_profile = CustomerProfile.objects.create(user=self.customer_user)
+
+        self.movie = Movie.objects.create(
+            title="Inventory Test Movie",
+            release_year=2021,
+            runtime_minutes=100,
+            mpaa_rating="PG",
+        )
+
+        self.movie_copy = MovieCopy.objects.create(
+            movie=self.movie,
+            copy_number=1,
+        )
+
+    def create_rental(
+        self,
+        status=Rental.RentalStatus.ACTIVE,
+    ):
+        return Rental.objects.create(
+            customer=self.customer_profile,
+            movie_copy=self.movie_copy,
+            due_date=timezone.localdate() + timedelta(days=7),
+            status=status,
+        )
+
+    def test_creating_active_rental_marks_copy_rented(self):
+        self.create_rental()
+        self.movie_copy.refresh_from_db()
+
+        self.assertEqual(
+            self.movie_copy.status,
+            MovieCopy.AvailabilityStatus.RENTED,
+        )
+
+    def test_creating_overdue_rental_marks_copy_rented(self):
+        self.create_rental(Rental.RentalStatus.OVERDUE)
+        self.movie_copy.refresh_from_db()
+
+        self.assertEqual(
+            self.movie_copy.status,
+            MovieCopy.AvailabilityStatus.RENTED,
+        )
+
+    def test_returning_rental_marks_copy_available(self):
+        rental = self.create_rental()
+
+        rental.status = Rental.RentalStatus.RETURNED
+        rental.return_date = timezone.now()
+        rental.save(
+            update_fields=[
+                "status",
+                "return_date",
+            ]
+        )
+
+        self.movie_copy.refresh_from_db()
+
+        self.assertEqual(
+            self.movie_copy.status,
+            MovieCopy.AvailabilityStatus.AVAILABLE,
+        )
+
+    def test_damaged_copy_remains_damaged_after_return(self):
+        rental = self.create_rental()
+
+        self.movie_copy.status = MovieCopy.AvailabilityStatus.DAMAGED
+        self.movie_copy.save(update_fields=["status"])
+
+        rental.status = Rental.RentalStatus.RETURNED
+        rental.return_date = timezone.now()
+        rental.save(
+            update_fields=[
+                "status",
+                "return_date",
+            ]
+        )
+
+        self.movie_copy.refresh_from_db()
+
+        self.assertEqual(
+            self.movie_copy.status,
+            MovieCopy.AvailabilityStatus.DAMAGED,
+        )
+
+    def test_deleting_open_rental_marks_copy_available(self):
+        rental = self.create_rental()
+        rental.delete()
+
+        self.movie_copy.refresh_from_db()
+
+        self.assertEqual(
+            self.movie_copy.status,
+            MovieCopy.AvailabilityStatus.AVAILABLE,
+        )
