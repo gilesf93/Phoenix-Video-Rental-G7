@@ -1,17 +1,40 @@
-from django.test import TestCase
-from datetime import timedelta
+from datetime import date, timedelta
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import CustomerProfile
 from catalog.models import Movie, MovieCopy
+
 from .models import Rental
 
-class StaffRentalDashboardTests(TestCase):
 
+class RentalOverdueStatusTests(SimpleTestCase):
+    TODAY = date(2026, 11, 1)
+
+    @patch("rentals.models.timezone.localdate", return_value=TODAY)
+    def test_future_due_date(self, mock_today):
+        rental = Rental(due_date=self.TODAY + timedelta(days=1))
+
+        self.assertEqual(rental.calculated_status, Rental.RentalStatus.ACTIVE)
+
+        self.assertFalse(rental.is_overdue)
+        self.assertEqual(rental.days_overdue, 0)
+
+    @patch("rentals.models.timezone.localdate", return_value=TODAY)
+    def test_past_due_date(self, mock_today):
+        rental = Rental(due_date=self.TODAY - timedelta(days=3))
+
+        self.assertEqual(rental.calculated_status, Rental.RentalStatus.OVERDUE)
+
+        self.assertTrue(rental.is_overdue)
+        self.assertEqual(rental.days_overdue, 3)
+
+
+class StaffRentalDashboardTests(TestCase):
     def setUp(self):
         User = get_user_model()
 
@@ -26,9 +49,7 @@ class StaffRentalDashboardTests(TestCase):
             password="TestPassword123!",
         )
 
-        self.customer_profile = CustomerProfile.objects.create(
-            user=self.customer_user
-        )
+        self.customer_profile = CustomerProfile.objects.create(user=self.customer_user)
 
         self.movie = Movie.objects.create(
             title="Test Movie",
@@ -58,12 +79,11 @@ class StaffRentalDashboardTests(TestCase):
             due_date=timezone.localdate() - timedelta(days=3),
             status=Rental.RentalStatus.OVERDUE,
         )
+
     def test_active_and_overdue_rentals_display_correctly(self):
         self.client.force_login(self.staff_user)
 
-        response = self.client.get(
-            reverse("rentals:staff_rental_dashboard")
-        )
+        response = self.client.get(reverse("rentals:staff_rental_dashboard"))
 
         self.assertEqual(response.status_code, 200)
 
@@ -98,9 +118,7 @@ class StaffRentalDashboardTests(TestCase):
 
         self.client.force_login(customer)
 
-        response = self.client.get(
-            reverse("rentals:staff_rental_dashboard")
-        )
+        response = self.client.get(reverse("rentals:staff_rental_dashboard"))
 
         self.assertEqual(response.status_code, 302)
         self.assertIn("/admin/login/", response.url)
@@ -108,9 +126,7 @@ class StaffRentalDashboardTests(TestCase):
     def test_staff_can_access_dashboard(self):
         self.client.force_login(self.staff_user)
 
-        response = self.client.get(
-            reverse("rentals:staff_rental_dashboard")
-        )
+        response = self.client.get(reverse("rentals:staff_rental_dashboard"))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Active Rentals")
@@ -118,7 +134,6 @@ class StaffRentalDashboardTests(TestCase):
 
 
 class CreateRentalTests(TestCase):
-
     def setUp(self):
         User = get_user_model()
 
@@ -133,9 +148,7 @@ class CreateRentalTests(TestCase):
             password="TestPassword123!",
         )
 
-        self.customer = CustomerProfile.objects.create(
-            user=self.customer_user
-        )
+        self.customer = CustomerProfile.objects.create(user=self.customer_user)
 
         self.movie = Movie.objects.create(
             title="Rental Test Movie",
@@ -154,50 +167,38 @@ class CreateRentalTests(TestCase):
     def test_staff_can_create_rental(self):
         self.client.force_login(self.staff_user)
 
-        response = self.client.post(self.url, {
-            "customer": self.customer.pk,
-            "movie_copy": self.movie_copy.pk,
-            "due_date": (
-                timezone.localdate() + timedelta(days=7)
-            ).isoformat(),
-        })
+        response = self.client.post(
+            self.url,
+            {
+                "customer": self.customer.pk,
+                "movie_copy": self.movie_copy.pk,
+                "due_date": (timezone.localdate() + timedelta(days=7)).isoformat(),
+            },
+        )
 
         self.assertRedirects(response, self.url)
 
-        rental = Rental.objects.get(
-            movie_copy=self.movie_copy
-        )
+        rental = Rental.objects.get(movie_copy=self.movie_copy)
 
-        self.assertEqual(
-            rental.status,
-            Rental.RentalStatus.ACTIVE
-        )
-        self.assertEqual(
-            rental.customer,
-            self.customer
-        )
-        self.assertEqual(
-            rental.processed_by,
-            self.staff_user
-        )
+        self.assertEqual(rental.status, Rental.RentalStatus.ACTIVE)
+        self.assertEqual(rental.customer, self.customer)
+        self.assertEqual(rental.processed_by, self.staff_user)
 
     def test_movie_copy_becomes_rented(self):
         self.client.force_login(self.staff_user)
 
-        self.client.post(self.url, {
-            "customer": self.customer.pk,
-            "movie_copy": self.movie_copy.pk,
-            "due_date": (
-                timezone.localdate() + timedelta(days=7)
-            ).isoformat(),
-        })
+        self.client.post(
+            self.url,
+            {
+                "customer": self.customer.pk,
+                "movie_copy": self.movie_copy.pk,
+                "due_date": (timezone.localdate() + timedelta(days=7)).isoformat(),
+            },
+        )
 
         self.movie_copy.refresh_from_db()
 
-        self.assertEqual(
-            self.movie_copy.status,
-            MovieCopy.AvailabilityStatus.RENTED
-        )
+        self.assertEqual(self.movie_copy.status, MovieCopy.AvailabilityStatus.RENTED)
 
     def test_rented_copy_cannot_be_rented_again(self):
         self.client.force_login(self.staff_user)
@@ -205,20 +206,13 @@ class CreateRentalTests(TestCase):
         rental_data = {
             "customer": self.customer.pk,
             "movie_copy": self.movie_copy.pk,
-            "due_date": (
-                timezone.localdate() + timedelta(days=7)
-            ).isoformat(),
+            "due_date": (timezone.localdate() + timedelta(days=7)).isoformat(),
         }
 
         self.client.post(self.url, rental_data)
         self.client.post(self.url, rental_data)
 
-        self.assertEqual(
-            Rental.objects.filter(
-                movie_copy=self.movie_copy
-            ).count(),
-            1
-        )
+        self.assertEqual(Rental.objects.filter(movie_copy=self.movie_copy).count(), 1)
 
     def test_regular_customer_cannot_create_rental(self):
         self.client.force_login(self.customer_user)
