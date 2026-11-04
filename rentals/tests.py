@@ -1,7 +1,8 @@
-from datetime import timedelta
+from datetime import date, timedelta
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
@@ -9,6 +10,28 @@ from accounts.models import CustomerProfile
 from catalog.models import Movie, MovieCopy
 
 from .models import PaymentRecord, Rental
+
+
+class RentalOverdueStatusTests(SimpleTestCase):
+    TODAY = date(2026, 11, 1)
+
+    @patch("rentals.models.timezone.localdate", return_value=TODAY)
+    def test_future_due_date(self, mock_today):
+        rental = Rental(due_date=self.TODAY + timedelta(days=1))
+
+        self.assertEqual(rental.calculated_status, Rental.RentalStatus.ACTIVE)
+
+        self.assertFalse(rental.is_overdue)
+        self.assertEqual(rental.days_overdue, 0)
+
+    @patch("rentals.models.timezone.localdate", return_value=TODAY)
+    def test_past_due_date(self, mock_today):
+        rental = Rental(due_date=self.TODAY - timedelta(days=3))
+
+        self.assertEqual(rental.calculated_status, Rental.RentalStatus.OVERDUE)
+
+        self.assertTrue(rental.is_overdue)
+        self.assertEqual(rental.days_overdue, 3)
 
 
 class StaffRentalDashboardTests(TestCase):
