@@ -1,32 +1,28 @@
-"""
-URL configuration for phoenix_video_rental project.
+from django.urls import path
 
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/6.1/topics/http/urls/
+from . import views
 
-Examples:
-
-Function views
-    1. Add an import: from my_app import views
-    2. Add a URL to urlpatterns: path("", views.home, name="home")
-
-Class-based views
-    1. Add an import: from other_app.views import Home
-    2. Add a URL to urlpatterns: path("", Home.as_view(), name="home")
-
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns: path("blog/", include("blog.urls"))
-"""
-
-from django.contrib import admin
-from django.urls import include, path
+app_name = "rentals"
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("accounts/", include("accounts.urls")),
-    path("movies/", include("catalog.urls")),
-    path("rentals/", include("rentals.urls")),
-    path("", include("core.urls")),
-    path("rentals/", include("rentals.urls")),
+    path(
+        "history/",
+        views.rental_history,
+        name="rental_history",
+    ),
+    path(
+        "staff/dashboard/",
+        views.staff_rental_dashboard,
+        name="staff_rental_dashboard",
+    ),
+    path(
+        "staff/create/",
+        views.create_rental,
+        name="create_rental",
+    ),
+    path(
+        "staff/rentals/<int:rental_id>/return/",
+        views.return_rental,
+        name="return_rental",
+    ),
 ]
