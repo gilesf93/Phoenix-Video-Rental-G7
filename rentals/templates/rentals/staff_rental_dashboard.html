@@ -15,6 +15,7 @@
             <th>Rental Date</th>
             <th>Due Date</th>
             <th>Status</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -25,10 +26,21 @@
             <td>{{ rental.rental_date|date:"M d, Y" }}</td>
             <td>{{ rental.due_date|date:"M d, Y" }}</td>
             <td>{{ rental.calculated_status|title }}</td>
+            <td>
+                <form
+                    method="post"
+                    action="{% url 'rentals:return_rental' rental.id %}"
+                >
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">
+                        Return Movie
+                    </button>
+                </form>
+            </td>
         </tr>
         {% empty %}
         <tr>
-            <td colspan="5">No active rentals found.</td>
+            <td colspan="6">No active rentals found.</td>
         </tr>
         {% endfor %}
     </tbody>
@@ -45,6 +57,7 @@
             <th>Due Date</th>
             <th>Status</th>
             <th>Days Overdue</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -55,11 +68,25 @@
             <td>{{ rental.rental_date|date:"M d, Y" }}</td>
             <td>{{ rental.due_date|date:"M d, Y" }}</td>
             <td>{{ rental.calculated_status|title }}</td>
-            <td>{{ rental.days_overdue }} day{{ rental.days_overdue|pluralize }}</td>
+            <td>
+                {{ rental.days_overdue }}
+                day{{ rental.days_overdue|pluralize }}
+            </td>
+            <td>
+                <form
+                    method="post"
+                    action="{% url 'rentals:return_rental' rental.id %}"
+                >
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">
+                        Return Movie
+                    </button>
+                </form>
+            </td>
         </tr>
         {% empty %}
         <tr>
-            <td colspan="5">No overdue rentals found.</td>
+            <td colspan="7">No overdue rentals found.</td>
         </tr>
         {% endfor %}
     </tbody>

@@ -1,0 +1,63 @@
+{% extends "core/base.html" %}
+
+{% block title %}My Rental History{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>My Rental History</h2>
+
+    <h3 class="mt-4">Rentals</h3>
+
+    {% if rentals %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Movie</th>
+                    <th>Rental Date</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rental in rentals %}
+                <tr>
+                    <td>{{ rental.movie_copy }}</td>
+                    <td>{{ rental.rental_date }}</td>
+                    <td>{{ rental.due_date }}</td>
+                    <td>{{ rental.status }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>You have no rental history yet.</p>
+    {% endif %}
+
+    <h3 class="mt-4">Payment History</h3>
+
+    {% if payments %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Payment Date</th>
+                    <th>Amount</th>
+                    <th>Method</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in payments %}
+                <tr>
+                    <td>{{ payment.payment_date }}</td>
+                    <td>${{ payment.amount }}</td>
+                    <td>{{ payment.payment_method }}</td>
+                    <td>{{ payment.payment_status }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>You have no payment history yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

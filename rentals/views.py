@@ -1,14 +1,45 @@
-from django.db import transaction
+
+
 from django.contrib import messages
-
-from catalog.models import MovieCopy
-from .forms import RentalForm
-from .models import Rental
-
 from django.contrib.admin.views.decorators import staff_member_required
-from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
+from accounts.models import CustomerProfile
+from catalog.models import MovieCopy
+
+from .forms import RentalForm
+from .models import PaymentRecord, Rental
+
+
+@login_required
+def rental_history(request):
+    customer = get_object_or_404(
+        CustomerProfile,
+        user=request.user,
+    )
+
+    rentals = Rental.objects.filter(
+        customer=customer,
+    ).select_related("movie_copy", "movie_copy__movie")
+
+    payments = PaymentRecord.objects.filter(
+        rental__customer=customer,
+    ).select_related("rental")
+
+    context = {
+        "rentals": rentals,
+        "payments": payments,
+    }
+
+    return render(
+        request,
+        "rentals/history.html",
+        context,
+    )
 
 
 @staff_member_required
@@ -35,6 +66,30 @@ def staff_rental_dashboard(request):
         "rentals/staff_rental_dashboard.html",
         context,
     )
+
+
+@staff_member_required
+@require_POST
+def return_rental(request, rental_id):
+    rental = get_object_or_404(
+        Rental,
+        pk=rental_id,
+        return_date__isnull=True,
+    )
+
+    rental.return_date = timezone.now()
+    rental.status = Rental.RentalStatus.RETURNED
+    rental.processed_by = request.user
+    rental.save(
+        update_fields=[
+            "return_date",
+            "status",
+            "processed_by",
+        ]
+    )
+
+    return redirect("rentals:staff_rental_dashboard")
+
 
 @staff_member_required
 def create_rental(request):
@@ -74,5 +129,5 @@ def create_rental(request):
     return render(
         request,
         "rentals/create_rental.html",
-        {"form": form}
+        {"form": form},
     )
