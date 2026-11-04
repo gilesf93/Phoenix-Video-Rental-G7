@@ -14,6 +14,7 @@
             <th>Movie</th>
             <th>Rental Date</th>
             <th>Due Date</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -23,10 +24,21 @@
             <td>{{ rental.movie_copy.movie.title }}</td>
             <td>{{ rental.rental_date|date:"M d, Y" }}</td>
             <td>{{ rental.due_date|date:"M d, Y" }}</td>
+            <td>
+                <form
+                    method="post"
+                    action="{% url 'rentals:return_rental' rental.id %}"
+                >
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">
+                        Return Movie
+                    </button>
+                </form>
+            </td>
         </tr>
         {% empty %}
         <tr>
-            <td colspan="4">No active rentals found.</td>
+            <td colspan="5">No active rentals found.</td>
         </tr>
         {% endfor %}
     </tbody>
@@ -41,6 +53,7 @@
             <th>Movie</th>
             <th>Rental Date</th>
             <th>Due Date</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -50,10 +63,21 @@
             <td>{{ rental.movie_copy.movie.title }}</td>
             <td>{{ rental.rental_date|date:"M d, Y" }}</td>
             <td>{{ rental.due_date|date:"M d, Y" }}</td>
+            <td>
+                <form
+                    method="post"
+                    action="{% url 'rentals:return_rental' rental.id %}"
+                >
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">
+                        Return Movie
+                    </button>
+                </form>
+            </td>
         </tr>
         {% empty %}
         <tr>
-            <td colspan="4">No overdue rentals found.</td>
+            <td colspan="5">No overdue rentals found.</td>
         </tr>
         {% endfor %}
     </tbody>

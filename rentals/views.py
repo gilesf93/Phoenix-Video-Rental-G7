@@ -6,8 +6,9 @@ from .forms import RentalForm
 from .models import Rental
 
 from django.contrib.admin.views.decorators import staff_member_required
-from django.shortcuts import render, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 
 
@@ -35,6 +36,30 @@ def staff_rental_dashboard(request):
         "rentals/staff_rental_dashboard.html",
         context,
     )
+
+
+@staff_member_required
+@require_POST
+def return_rental(request, rental_id):
+    rental = get_object_or_404(
+        Rental,
+        pk=rental_id,
+        return_date__isnull=True,
+    )
+
+    rental.return_date = timezone.now()
+    rental.status = Rental.RentalStatus.RETURNED
+    rental.processed_by = request.user
+    rental.save(
+        update_fields=[
+            "return_date",
+            "status",
+            "processed_by",
+        ]
+    )
+
+    return redirect("rentals:staff_rental_dashboard")
+
 
 @staff_member_required
 def create_rental(request):
