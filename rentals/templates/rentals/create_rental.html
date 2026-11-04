@@ -1,0 +1,21 @@
+
+{% extends "core/base.html" %}
+
+{% block title %}Create Rental{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Process Movie Rental</h2>
+    <p>Select a customer and an available movie copy.</p>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {{ form.as_p }}
+
+        <button type="submit" class="btn btn-primary">
+            Create Rental
+        </button>
+    </form>
+</div>
+{% endblock %}
