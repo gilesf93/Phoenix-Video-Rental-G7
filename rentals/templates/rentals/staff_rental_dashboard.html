@@ -28,7 +28,7 @@
         </tr>
         {% empty %}
         <tr>
-            <td colspan="4">No active rentals found.</td>
+            <td colspan="5">No active rentals found.</td>
         </tr>
         {% endfor %}
     </tbody>
@@ -43,6 +43,8 @@
             <th>Movie</th>
             <th>Rental Date</th>
             <th>Due Date</th>
+            <th>Status</th>
+            <th>Days Overdue</th>
         </tr>
     </thead>
     <tbody>
@@ -52,10 +54,12 @@
             <td>{{ rental.movie_copy.movie.title }}</td>
             <td>{{ rental.rental_date|date:"M d, Y" }}</td>
             <td>{{ rental.due_date|date:"M d, Y" }}</td>
+            <td>{{ rental.calculated_status|title }}</td>
+            <td>{{ rental.days_overdue }} day{{ rental.days_overdue|pluralize }}</td>
         </tr>
         {% empty %}
         <tr>
-            <td colspan="4">No overdue rentals found.</td>
+            <td colspan="5">No overdue rentals found.</td>
         </tr>
         {% endfor %}
     </tbody>
