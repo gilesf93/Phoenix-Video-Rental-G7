@@ -29,4 +29,3 @@ class PaymentRecordAdmin(admin.ModelAdmin):
     list_filter = ("payment_status", "payment_method")
     search_fields = ("=rental__id", "=id")
 
-    

@@ -39,15 +39,15 @@
                         <a class="nav-link" href="#">Rentals</a>
                     </li>
 
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Customer History</a>
-                    </li>
-
-
-
-
-
                     {% if user.is_authenticated %}
+                    <li class="nav-item">
+                    <a class="nav-link" href="{% url 'rentals:rental_history' %}">
+                            Customer History
+                    </a>
+                    </li>
+                    {% endif %}
+
+                    {% if user.is_authenticated and user.is_staff %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'accounts:profile' %}">
                             Profile

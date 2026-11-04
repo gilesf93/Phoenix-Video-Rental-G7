@@ -1,15 +1,45 @@
-from django.db import transaction
+
+
 from django.contrib import messages
-
-from catalog.models import MovieCopy
-from .forms import RentalForm
-from .models import Rental
-
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from accounts.models import CustomerProfile
+from catalog.models import MovieCopy
+
+from .forms import RentalForm
+from .models import PaymentRecord, Rental
+
+
+@login_required
+def rental_history(request):
+    customer = get_object_or_404(
+        CustomerProfile,
+        user=request.user,
+    )
+
+    rentals = Rental.objects.filter(
+        customer=customer,
+    ).select_related("movie_copy", "movie_copy__movie")
+
+    payments = PaymentRecord.objects.filter(
+        rental__customer=customer,
+    ).select_related("rental")
+
+    context = {
+        "rentals": rentals,
+        "payments": payments,
+    }
+
+    return render(
+        request,
+        "rentals/history.html",
+        context,
+    )
 
 
 @staff_member_required
@@ -99,5 +129,5 @@ def create_rental(request):
     return render(
         request,
         "rentals/create_rental.html",
-        {"form": form}
+        {"form": form},
     )
