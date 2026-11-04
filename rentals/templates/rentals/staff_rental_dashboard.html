@@ -14,6 +14,7 @@
             <th>Movie</th>
             <th>Rental Date</th>
             <th>Due Date</th>
+            <th>Status</th>
         </tr>
     </thead>
     <tbody>
@@ -23,6 +24,7 @@
             <td>{{ rental.movie_copy.movie.title }}</td>
             <td>{{ rental.rental_date|date:"M d, Y" }}</td>
             <td>{{ rental.due_date|date:"M d, Y" }}</td>
+            <td>{{ rental.calculated_status|title }}</td>
         </tr>
         {% empty %}
         <tr>

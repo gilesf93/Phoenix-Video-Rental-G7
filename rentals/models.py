@@ -40,11 +40,13 @@ class Rental(models.Model):
         ordering = ["-rental_date"]
 
     @property
-    def is_overdue(self):
-        return (
-            self.return_date is None
-            and self.due_date < timezone.localdate()
-        )
+    def calculated_status(self):
+        if self.return_date is not None:
+            return self.RentalStatus.RETURNED
+        elif self.due_date < timezone.localdate():
+            return self.RentalStatus.OVERDUE
+        else:
+            return self.RentalStatus.ACTIVE
 
     def __str__(self):
         return f"Rental {self.pk} - {self.movie_copy}"
