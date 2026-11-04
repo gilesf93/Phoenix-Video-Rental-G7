@@ -32,7 +32,7 @@ def register(request):
 def profile_view(request):
     return render(
         request,
-        "profile.html",
+        "accounts/profile.html",
         {"customer": request.user},
     )
 

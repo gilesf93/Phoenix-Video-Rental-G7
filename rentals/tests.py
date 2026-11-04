@@ -8,7 +8,7 @@ from django.utils import timezone
 from accounts.models import CustomerProfile
 from catalog.models import Movie, MovieCopy
 
-from .models import Rental
+from .models import PaymentRecord, Rental
 
 
 class StaffRentalDashboardTests(TestCase):
@@ -319,3 +319,113 @@ class InventoryStatusSignalTests(TestCase):
         rental.delete()
         self.movie_copy.refresh_from_db()
         self.assertEqual(self.movie_copy.status, MovieCopy.AvailabilityStatus.AVAILABLE)
+
+
+class CustomerRentalHistoryTests(TestCase):
+    def setUp(self):
+        User = get_user_model()
+
+        self.user1 = User.objects.create_user(
+            username="historycustomer1",
+            password="TestPassword123!",
+        )
+        self.user2 = User.objects.create_user(
+            username="historycustomer2",
+            password="TestPassword123!",
+        )
+
+        self.customer1 = CustomerProfile.objects.create(
+            user=self.user1
+        )
+        self.customer2 = CustomerProfile.objects.create(
+            user=self.user2
+        )
+
+        self.movie = Movie.objects.create(
+            title="History Test Movie",
+            release_year=2022,
+            runtime_minutes=110,
+            mpaa_rating="PG",
+        )
+
+        self.copy1 = MovieCopy.objects.create(
+            movie=self.movie,
+            copy_number=1,
+        )
+        self.copy2 = MovieCopy.objects.create(
+            movie=self.movie,
+            copy_number=2,
+        )
+
+        self.rental1 = Rental.objects.create(
+            customer=self.customer1,
+            movie_copy=self.copy1,
+            due_date=timezone.localdate() + timedelta(days=7),
+        )
+        self.rental2 = Rental.objects.create(
+            customer=self.customer2,
+            movie_copy=self.copy2,
+            due_date=timezone.localdate() + timedelta(days=7),
+        )
+
+        self.url = reverse("rentals:rental_history")
+
+    def test_customer_can_view_own_rentals(self):
+        self.client.force_login(self.user1)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            self.rental1,
+            response.context["rentals"],
+        )
+
+    def test_customer_cannot_view_other_rentals(self):
+        self.client.force_login(self.user1)
+
+        response = self.client.get(self.url)
+
+        self.assertNotIn(
+            self.rental2,
+            response.context["rentals"],
+        )
+
+    def test_customer_cannot_view_other_payments(self):
+        payment1 = PaymentRecord.objects.create(
+            rental=self.rental1,
+            amount="5.00",
+            payment_date=timezone.now(),
+            payment_method="cash",
+            payment_status="paid",
+        )
+        payment2 = PaymentRecord.objects.create(
+            rental=self.rental2,
+            amount="10.00",
+            payment_date=timezone.now(),
+            payment_method="cash",
+            payment_status="paid",
+        )
+
+        self.client.force_login(self.user1)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            payment1,
+            response.context["payments"],
+        )
+        self.assertNotIn(
+            payment2,
+            response.context["payments"],
+        )
+
+    def test_logged_out_user_cannot_view_history(self):
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(
+            "/login/",
+            response.url,
+        )
