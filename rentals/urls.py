@@ -10,4 +10,9 @@ urlpatterns = [
         views.rental_history,
         name="rental_history",
     ),
+    path(
+        "inventory/",
+    views.inventory_report,
+    name="inventory_report",  
+    ),
 ]
