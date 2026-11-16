@@ -1,15 +1,15 @@
 
-
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from accounts.models import CustomerProfile
-from catalog.models import MovieCopy
+from catalog.models import Movie, MovieCopy
 
 from .forms import RentalForm
 from .models import PaymentRecord, Rental
@@ -35,11 +35,7 @@ def rental_history(request):
         "payments": payments,
     }
 
-    return render(
-        request,
-        "rentals/history.html",
-        context,
-    )
+    return render(request, "rentals/history.html", context)
 
 
 @staff_member_required
@@ -71,22 +67,27 @@ def staff_rental_dashboard(request):
 @staff_member_required
 @require_POST
 def return_rental(request, rental_id):
-    rental = get_object_or_404(
-        Rental,
-        pk=rental_id,
-        return_date__isnull=True,
-    )
+    with transaction.atomic():
+        rental = get_object_or_404(
+            Rental.objects.select_for_update(),
+            pk=rental_id,
+            return_date__isnull=True,
+        )
 
-    rental.return_date = timezone.now()
-    rental.status = Rental.RentalStatus.RETURNED
-    rental.processed_by = request.user
-    rental.save(
-        update_fields=[
-            "return_date",
-            "status",
-            "processed_by",
-        ]
-    )
+        rental.return_date = timezone.now()
+        rental.status = Rental.RentalStatus.RETURNED
+        rental.processed_by = request.user
+        rental.save(
+            update_fields=[
+                "return_date",
+                "status",
+                "processed_by",
+            ]
+        )
+
+        copy = rental.movie_copy
+        copy.status = MovieCopy.AvailabilityStatus.AVAILABLE
+        copy.save(update_fields=["status"])
 
     return redirect("rentals:staff_rental_dashboard")
 
@@ -131,3 +132,45 @@ def create_rental(request):
         "rentals/create_rental.html",
         {"form": form},
     )
+
+
+@staff_member_required
+def inventory_report(request):
+    movies = Movie.objects.annotate(
+        total_copies=Count("copies"),
+        available_copies=Count(
+            "copies",
+            filter=Q(copies__status="available")
+        ),
+        rented_copies=Count(
+            "copies",
+            filter=Q(copies__status="rented")
+        ),
+        unavailable_copies=Count(
+            "copies",
+            filter=Q(copies__status="damaged")
+        ),
+    )
+
+    copies = MovieCopy.objects.select_related("movie").all()
+
+    total_copies = sum(m.total_copies for m in movies)
+    available_copies = sum(m.available_copies for m in movies)
+    rented_copies = sum(m.rented_copies for m in movies)
+    unavailable_copies = sum(m.unavailable_copies for m in movies)
+
+    context = {
+        "movies": movies,
+        "copies": copies,
+        "total_copies": total_copies,
+        "available_copies": available_copies,
+        "rented_copies": rented_copies,
+        "unavailable_copies": unavailable_copies,
+    }
+
+    return render(
+        request,
+        "rentals/inventory_report.html",
+        context,
+    )
+
