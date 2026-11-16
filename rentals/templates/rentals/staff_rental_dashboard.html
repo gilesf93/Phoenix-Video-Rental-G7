@@ -1,0 +1,94 @@
+{% extends "core/base.html" %}
+
+{% block title %}Rental Dashboard{% endblock %}
+
+{% block content %}
+<h1>Rental Dashboard</h1>
+
+<h2>Active Rentals</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Customer</th>
+            <th>Movie</th>
+            <th>Rental Date</th>
+            <th>Due Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for rental in active_rentals %}
+        <tr>
+            <td>{{ rental.customer.user.username }}</td>
+            <td>{{ rental.movie_copy.movie.title }}</td>
+            <td>{{ rental.rental_date|date:"M d, Y" }}</td>
+            <td>{{ rental.due_date|date:"M d, Y" }}</td>
+            <td>{{ rental.calculated_status|title }}</td>
+            <td>
+                <form
+                    method="post"
+                    action="{% url 'rentals:return_rental' rental.id %}"
+                >
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">
+                        Return Movie
+                    </button>
+                </form>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="6">No active rentals found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2>Overdue Rentals</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Customer</th>
+            <th>Movie</th>
+            <th>Rental Date</th>
+            <th>Due Date</th>
+            <th>Status</th>
+            <th>Days Overdue</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for rental in overdue_rentals %}
+        <tr>
+            <td>{{ rental.customer.user.username }}</td>
+            <td>{{ rental.movie_copy.movie.title }}</td>
+            <td>{{ rental.rental_date|date:"M d, Y" }}</td>
+            <td>{{ rental.due_date|date:"M d, Y" }}</td>
+            <td>{{ rental.calculated_status|title }}</td>
+            <td>
+                {{ rental.days_overdue }}
+                day{{ rental.days_overdue|pluralize }}
+            </td>
+            <td>
+                <form
+                    method="post"
+                    action="{% url 'rentals:return_rental' rental.id %}"
+                >
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">
+                        Return Movie
+                    </button>
+                </form>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="7">No overdue rentals found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

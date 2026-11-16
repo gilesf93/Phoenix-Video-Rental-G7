@@ -76,8 +76,19 @@
     </nav>
 
     <main class="container mt-4">
-        {% block content %}
-        {% endblock %}
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }}"
+                 role="alert">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% block content %}
+    {% endblock %}
+
     </main>
 
     <footer class="bg-dark text-white text-center mt-5 py-3">

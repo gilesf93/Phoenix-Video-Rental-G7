@@ -5,4 +5,14 @@
 {% block content %}
     <h1>Staff Dashboard</h1>
     <p>Welcome, {{user.username}} to the staff dashboard. Here you can manage movies, rentals, and customer history.</p>
+
+        <h2>Customer Management</h2>
+
+    <p>
+        View, search, add, edit, and delete customer records.
+    </p>
+
+    <a href="{% url 'accounts:staff_customers' %}">
+        Manage Customers
+    </a>
 {% endblock %}
