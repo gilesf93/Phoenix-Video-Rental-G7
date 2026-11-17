@@ -1,4 +1,3 @@
-
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
@@ -36,6 +35,22 @@ def rental_history(request):
     }
 
     return render(request, "rentals/history.html", context)
+
+
+@staff_member_required
+def staff_rental_history_report(request):
+    rentals = Rental.objects.select_related(
+        "customer",
+        "customer__user",
+        "movie_copy",
+        "movie_copy__movie",
+    ).order_by("-rental_date")
+
+    return render(
+        request,
+        "rentals/staff_rental_history_report.html",
+        {"rentals": rentals},
+    )
 
 
 @staff_member_required
@@ -106,7 +121,7 @@ def create_rental(request):
                 if copy.status != MovieCopy.AvailabilityStatus.AVAILABLE:
                     form.add_error(
                         "movie_copy",
-                        "This movie copy is no longer available."
+                        "This movie copy is no longer available.",
                     )
                 else:
                     rental = form.save(commit=False)
@@ -120,7 +135,7 @@ def create_rental(request):
 
                     messages.success(
                         request,
-                        "Movie rental created successfully!"
+                        "Movie rental created successfully!",
                     )
                     return redirect("rentals:create_rental")
 
@@ -140,24 +155,24 @@ def inventory_report(request):
         total_copies=Count("copies"),
         available_copies=Count(
             "copies",
-            filter=Q(copies__status="available")
+            filter=Q(copies__status="available"),
         ),
         rented_copies=Count(
             "copies",
-            filter=Q(copies__status="rented")
+            filter=Q(copies__status="rented"),
         ),
         unavailable_copies=Count(
             "copies",
-            filter=Q(copies__status="damaged")
+            filter=Q(copies__status="damaged"),
         ),
     )
 
     copies = MovieCopy.objects.select_related("movie").all()
 
-    total_copies = sum(m.total_copies for m in movies)
-    available_copies = sum(m.available_copies for m in movies)
-    rented_copies = sum(m.rented_copies for m in movies)
-    unavailable_copies = sum(m.unavailable_copies for m in movies)
+    total_copies = sum(movie.total_copies for movie in movies)
+    available_copies = sum(movie.available_copies for movie in movies)
+    rented_copies = sum(movie.rented_copies for movie in movies)
+    unavailable_copies = sum(movie.unavailable_copies for movie in movies)
 
     context = {
         "movies": movies,
@@ -173,4 +188,3 @@ def inventory_report(request):
         "rentals/inventory_report.html",
         context,
     )
-

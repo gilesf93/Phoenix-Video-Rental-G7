@@ -1,4 +1,3 @@
-
 from django.urls import path
 
 from . import views
@@ -17,6 +16,11 @@ urlpatterns = [
         name="inventory_report",
     ),
     path(
+        "staff/history/",
+        views.staff_rental_history_report,
+        name="staff_rental_history_report",
+    ),
+    path(
         "staff/dashboard/",
         views.staff_rental_dashboard,
         name="staff_rental_dashboard",
@@ -32,4 +36,3 @@ urlpatterns = [
         name="return_rental",
     ),
 ]
-
