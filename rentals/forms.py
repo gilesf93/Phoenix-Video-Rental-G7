@@ -1,3 +1,4 @@
+
 from django import forms
 from django.utils import timezone
 
@@ -28,6 +29,13 @@ class RentalForm(forms.ModelForm):
                 status=MovieCopy.AvailabilityStatus.AVAILABLE
             )
         )
+
+        self.fields["movie_copy"].error_messages.update({
+            "invalid_choice": (
+                "This movie copy is unavailable or out of stock."
+            ),
+            "required": "Please select an available movie copy."
+        })
 
     def clean_due_date(self):
         due_date = self.cleaned_data["due_date"]

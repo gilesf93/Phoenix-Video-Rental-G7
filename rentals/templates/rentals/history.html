@@ -24,7 +24,21 @@
                     <td>{{ rental.movie_copy }}</td>
                     <td>{{ rental.rental_date }}</td>
                     <td>{{ rental.due_date }}</td>
-                    <td>{{ rental.status }}</td>
+
+<td>
+    {% if rental.is_overdue %}
+        <span class="badge bg-danger">Overdue</span>
+        <br>
+        <small class="text-danger">
+            {{ rental.days_overdue }} day{{ rental.days_overdue|pluralize }} overdue
+        </small>
+    {% elif rental.return_date %}
+        <span class="badge bg-success">Returned</span>
+    {% else %}
+        <span class="badge bg-primary">Active</span>
+    {% endif %}
+</td>
+
                 </tr>
                 {% endfor %}
             </tbody>
