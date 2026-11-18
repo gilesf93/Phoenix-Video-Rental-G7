@@ -237,7 +237,9 @@ def inventory_report(request):
 
 @staff_member_required
 def payment_summary_report(request):
-    payments = PaymentRecord.objects.select_related("rental")
+    payments = PaymentRecord.objects.select_related(
+        "rental", "rental__customer__user", "rental__movie_copy__movie"
+    )
     completed_payments = payments.filter(
         payment_status=PaymentRecord.PaymentStatus.COMPLETED
     )

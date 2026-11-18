@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from decimal import Decimal
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
@@ -204,7 +205,6 @@ class StaffRentalDashboardTests(TestCase):
 
         self.assertEqual(response.status_code, 405)
 
-
     def test_returned_rental_cannot_be_returned_twice(self):
         self.client.force_login(self.staff_user)
 
@@ -221,29 +221,16 @@ class StaffRentalDashboardTests(TestCase):
 
         response = self.client.post(return_url, follow=True)
 
-        self.assertRedirects(
-            response,
-            reverse("rentals:staff_rental_dashboard")
-        )
+        self.assertRedirects(response, reverse("rentals:staff_rental_dashboard"))
 
-        self.assertContains(
-            response,
-            "This movie has already been returned."
-        )
+        self.assertContains(response, "This movie has already been returned.")
 
         self.active_rental.refresh_from_db()
         self.active_rental.movie_copy.refresh_from_db()
 
-        self.assertEqual(
-            self.active_rental.return_date,
-            original_return_date
-        )
+        self.assertEqual(self.active_rental.return_date, original_return_date)
 
-        self.assertEqual(
-            self.active_rental.movie_copy.status,
-            "available"
-        )
-
+        self.assertEqual(self.active_rental.movie_copy.status, "available")
 
 
 class CreateRentalTests(TestCase):
@@ -314,7 +301,6 @@ class CreateRentalTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn("/admin/login/", response.url)
 
-
     def test_out_of_stock_message(self):
         self.client.force_login(self.staff_user)
         self.movie_copy.status = MovieCopy.AvailabilityStatus.RENTED
@@ -326,11 +312,14 @@ class CreateRentalTests(TestCase):
         self.client.force_login(self.staff_user)
         self.movie_copy.status = MovieCopy.AvailabilityStatus.DAMAGED
         self.movie_copy.save(update_fields=["status"])
-        response = self.client.post(self.url, {
-            "customer": self.customer.pk,
-            "movie_copy": self.movie_copy.pk,
-            "due_date": timezone.localdate().isoformat(),
-        })
+        response = self.client.post(
+            self.url,
+            {
+                "customer": self.customer.pk,
+                "movie_copy": self.movie_copy.pk,
+                "due_date": timezone.localdate().isoformat(),
+            },
+        )
         self.assertContains(response, "Unable to process rental.")
         self.assertFalse(Rental.objects.filter(movie_copy=self.movie_copy).exists())
         self.movie_copy.refresh_from_db()
@@ -338,11 +327,14 @@ class CreateRentalTests(TestCase):
 
     def test_invalid_due_date_preserves_inventory(self):
         self.client.force_login(self.staff_user)
-        response = self.client.post(self.url, {
-            "customer": self.customer.pk,
-            "movie_copy": self.movie_copy.pk,
-            "due_date": (timezone.localdate() - timedelta(days=1)).isoformat(),
-        })
+        response = self.client.post(
+            self.url,
+            {
+                "customer": self.customer.pk,
+                "movie_copy": self.movie_copy.pk,
+                "due_date": (timezone.localdate() - timedelta(days=1)).isoformat(),
+            },
+        )
         self.assertContains(response, "The due date cannot be in the past.")
         self.assertFalse(Rental.objects.filter(movie_copy=self.movie_copy).exists())
         self.movie_copy.refresh_from_db()
@@ -659,4 +651,149 @@ class StaffRentalHistoryReportTests(TestCase):
         self.assertContains(
             response,
             "No rental records found.",
+        )
+
+
+class PaymentSummaryReportTests(TestCase):
+    def setUp(self):
+        User = get_user_model()
+
+        self.staff_user = User.objects.create_user(
+            username="paymentstaff",
+            password="TestPassword123!",
+            is_staff=True,
+        )
+
+        self.customer_user = User.objects.create_user(
+            username="paymentcustomer",
+            password="TestPassword123!",
+            first_name="Test",
+            last_name="Customer",
+        )
+        self.customer = CustomerProfile.objects.create(user=self.customer_user)
+        self.movie = Movie.objects.create(
+            title="Payment Test Movie",
+            release_year=2023,
+            runtime_minutes=100,
+            mpaa_rating="PG",
+        )
+        self.movie_copy = MovieCopy.objects.create(movie=self.movie, copy_number=1)
+        self.rental = Rental.objects.create(
+            customer=self.customer,
+            movie_copy=self.movie_copy,
+            due_date=timezone.localdate() + timedelta(days=7),
+        )
+        self.url = reverse("rentals:payment_summary_report")
+
+    def test_staff_can_access_payment_summary_report(self):
+        self.client.force_login(self.staff_user)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(
+            response,
+            "rentals/payment_summary_report.html",
+        )
+        self.assertContains(response, "Payment Summary Report")
+
+    def test_customer_cannot_access_payment_summary_report(self):
+        self.client.force_login(self.customer_user)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/admin/login/", response.url)
+
+    def test_logged_out_user_cannot_access_payment_summary_report(self):
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/admin/login/", response.url)
+
+    def test_empty_payment_report(self):
+        self.client.force_login(self.staff_user)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            "No payment records found.",
+        )
+        self.assertEqual(
+            response.context["total_completed"],
+            Decimal("0.00"),
+        )
+
+    def test_report_displays_payment_details(self):
+        payment = PaymentRecord.objects.create(
+            rental=self.rental,
+            amount=Decimal("15.50"),
+            payment_method=PaymentRecord.PaymentMethod.CREDIT_CARD,
+            payment_status=PaymentRecord.PaymentStatus.COMPLETED,
+        )
+
+        self.client.force_login(self.staff_user)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(payment, response.context["payments"])
+        self.assertContains(response, "Test Customer")
+        self.assertContains(response, "Payment Test Movie")
+        self.assertContains(response, "15.50")
+        self.assertContains(response, "Credit Card")
+        self.assertContains(response, "Completed")
+        self.assertContains(
+            response,
+            timezone.localtime(payment.payment_date).strftime("%b %d, %Y"),
+        )
+
+    def test_total_includes_only_completed_payments(self):
+        PaymentRecord.objects.create(
+            rental=self.rental,
+            amount=Decimal("10.00"),
+            payment_method=PaymentRecord.PaymentMethod.CASH,
+            payment_status=PaymentRecord.PaymentStatus.COMPLETED,
+        )
+
+        PaymentRecord.objects.create(
+            rental=self.rental,
+            amount=Decimal("15.50"),
+            payment_method=PaymentRecord.PaymentMethod.CREDIT_CARD,
+            payment_status=PaymentRecord.PaymentStatus.COMPLETED,
+        )
+        PaymentRecord.objects.create(
+            rental=self.rental,
+            amount=Decimal("20.00"),
+            payment_method=PaymentRecord.PaymentMethod.DEBIT_CARD,
+            payment_status=PaymentRecord.PaymentStatus.PENDING,
+        )
+
+        PaymentRecord.objects.create(
+            rental=self.rental,
+            amount=Decimal("30.00"),
+            payment_method=PaymentRecord.PaymentMethod.CREDIT_CARD,
+            payment_status=PaymentRecord.PaymentStatus.FAILED,
+        )
+
+        PaymentRecord.objects.create(
+            rental=self.rental,
+            amount=Decimal("5.00"),
+            payment_method=PaymentRecord.PaymentMethod.CASH,
+            payment_status=PaymentRecord.PaymentStatus.REFUNDED,
+        )
+        self.client.force_login(self.staff_user)
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context["payments"]), 5)
+        self.assertEqual(
+            response.context["total_completed"],
+            Decimal("25.50"),
+        )
+        self.assertContains(
+            response,
+            "Total Completed Payments: $25.50",
         )
