@@ -202,7 +202,6 @@ class StaffRentalDashboardTests(TestCase):
             )
         )
 
-
         self.assertEqual(response.status_code, 405)
 
 
@@ -271,11 +270,14 @@ class CreateRentalTests(TestCase):
 
     def test_staff_can_create_rental(self):
         self.client.force_login(self.staff_user)
-        response = self.client.post(self.url, {
-            "customer": self.customer.pk,
-            "movie_copy": self.movie_copy.pk,
-            "due_date": (timezone.localdate() + timedelta(days=7)).isoformat(),
-        })
+        response = self.client.post(
+            self.url,
+            {
+                "customer": self.customer.pk,
+                "movie_copy": self.movie_copy.pk,
+                "due_date": (timezone.localdate() + timedelta(days=7)).isoformat(),
+            },
+        )
         self.assertRedirects(response, self.url)
         rental = Rental.objects.get(movie_copy=self.movie_copy)
         self.assertEqual(rental.status, Rental.RentalStatus.ACTIVE)
@@ -284,11 +286,14 @@ class CreateRentalTests(TestCase):
 
     def test_movie_copy_becomes_rented(self):
         self.client.force_login(self.staff_user)
-        self.client.post(self.url, {
-            "customer": self.customer.pk,
-            "movie_copy": self.movie_copy.pk,
-            "due_date": (timezone.localdate() + timedelta(days=7)).isoformat(),
-        })
+        self.client.post(
+            self.url,
+            {
+                "customer": self.customer.pk,
+                "movie_copy": self.movie_copy.pk,
+                "due_date": (timezone.localdate() + timedelta(days=7)).isoformat(),
+            },
+        )
         self.movie_copy.refresh_from_db()
         self.assertEqual(self.movie_copy.status, MovieCopy.AvailabilityStatus.RENTED)
 
@@ -419,12 +424,8 @@ class CustomerRentalHistoryTests(TestCase):
             password="TestPassword123!",
         )
 
-        self.customer1 = CustomerProfile.objects.create(
-            user=self.user1
-        )
-        self.customer2 = CustomerProfile.objects.create(
-            user=self.user2
-        )
+        self.customer1 = CustomerProfile.objects.create(user=self.user1)
+        self.customer2 = CustomerProfile.objects.create(user=self.user2)
 
         self.movie = Movie.objects.create(
             title="History Test Movie",
@@ -516,3 +517,146 @@ class CustomerRentalHistoryTests(TestCase):
         )
 
 
+class StaffRentalHistoryReportTests(TestCase):
+    def setUp(self):
+        User = get_user_model()
+
+        self.staff_user = User.objects.create_user(
+            username="reportstaff",
+            password="TestPassword123!",
+            is_staff=True,
+        )
+
+        self.customer_user1 = User.objects.create_user(
+            username="historyreport1",
+            password="TestPassword123!",
+            first_name="Alex",
+            last_name="Customer",
+        )
+        self.customer_user2 = User.objects.create_user(
+            username="historyreport2",
+            password="TestPassword123!",
+            first_name="Jordan",
+            last_name="Customer",
+        )
+
+        self.customer1 = CustomerProfile.objects.create(
+            user=self.customer_user1,
+        )
+        self.customer2 = CustomerProfile.objects.create(
+            user=self.customer_user2,
+        )
+
+        self.movie1 = Movie.objects.create(
+            title="Older Rental Movie",
+            release_year=2020,
+            runtime_minutes=100,
+            mpaa_rating="PG",
+        )
+        self.movie2 = Movie.objects.create(
+            title="Newest Rental Movie",
+            release_year=2022,
+            runtime_minutes=120,
+            mpaa_rating="PG-13",
+        )
+
+        self.copy1 = MovieCopy.objects.create(
+            movie=self.movie1,
+            copy_number=1,
+        )
+        self.copy2 = MovieCopy.objects.create(
+            movie=self.movie2,
+            copy_number=1,
+        )
+
+        self.older_rental = Rental.objects.create(
+            customer=self.customer1,
+            movie_copy=self.copy1,
+            rental_date=timezone.now() - timedelta(days=5),
+            due_date=timezone.localdate() - timedelta(days=1),
+            return_date=timezone.now() - timedelta(days=2),
+            status=Rental.RentalStatus.RETURNED,
+        )
+
+        self.newer_rental = Rental.objects.create(
+            customer=self.customer2,
+            movie_copy=self.copy2,
+            rental_date=timezone.now() - timedelta(days=1),
+            due_date=timezone.localdate() + timedelta(days=6),
+            status=Rental.RentalStatus.ACTIVE,
+        )
+
+        self.url = reverse("rentals:staff_rental_history_report")
+
+    def test_staff_can_access_rental_history_report(self):
+        self.client.force_login(self.staff_user)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(
+            response,
+            "rentals/staff_rental_history_report.html",
+        )
+        self.assertContains(response, "Rental History Report")
+
+    def test_regular_customer_cannot_access_report(self):
+        self.client.force_login(self.customer_user1)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/admin/login/", response.url)
+
+    def test_report_includes_rentals_for_all_customers(self):
+        self.client.force_login(self.staff_user)
+
+        response = self.client.get(self.url)
+
+        self.assertIn(
+            self.older_rental,
+            response.context["rentals"],
+        )
+        self.assertIn(
+            self.newer_rental,
+            response.context["rentals"],
+        )
+
+    def test_report_displays_required_rental_details(self):
+        self.client.force_login(self.staff_user)
+
+        response = self.client.get(self.url)
+
+        self.assertContains(response, "Alex Customer")
+        self.assertContains(response, "Jordan Customer")
+        self.assertContains(response, "Older Rental Movie")
+        self.assertContains(response, "Newest Rental Movie")
+        self.assertContains(response, "Returned")
+        self.assertContains(response, "Active")
+        self.assertContains(response, "Not returned")
+
+    def test_rentals_are_sorted_newest_first(self):
+        self.client.force_login(self.staff_user)
+
+        response = self.client.get(self.url)
+        rentals = list(response.context["rentals"])
+
+        self.assertEqual(
+            rentals,
+            [
+                self.newer_rental,
+                self.older_rental,
+            ],
+        )
+
+    def test_empty_report_displays_message(self):
+        Rental.objects.all().delete()
+        self.client.force_login(self.staff_user)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            "No rental records found.",
+        )
