@@ -204,6 +204,7 @@ class StaffRentalDashboardTests(TestCase):
 
         self.assertEqual(response.status_code, 405)
 
+
     def test_returned_rental_cannot_be_returned_twice(self):
         self.client.force_login(self.staff_user)
 
@@ -213,9 +214,36 @@ class StaffRentalDashboardTests(TestCase):
         )
 
         self.client.post(return_url)
-        response = self.client.post(return_url)
+        self.active_rental.refresh_from_db()
 
-        self.assertEqual(response.status_code, 404)
+        original_return_date = self.active_rental.return_date
+        self.assertIsNotNone(original_return_date)
+
+        response = self.client.post(return_url, follow=True)
+
+        self.assertRedirects(
+            response,
+            reverse("rentals:staff_rental_dashboard")
+        )
+
+        self.assertContains(
+            response,
+            "This movie has already been returned."
+        )
+
+        self.active_rental.refresh_from_db()
+        self.active_rental.movie_copy.refresh_from_db()
+
+        self.assertEqual(
+            self.active_rental.return_date,
+            original_return_date
+        )
+
+        self.assertEqual(
+            self.active_rental.movie_copy.status,
+            "available"
+        )
+
 
 
 class CreateRentalTests(TestCase):
@@ -285,6 +313,40 @@ class CreateRentalTests(TestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 302)
         self.assertIn("/admin/login/", response.url)
+
+
+    def test_out_of_stock_message(self):
+        self.client.force_login(self.staff_user)
+        self.movie_copy.status = MovieCopy.AvailabilityStatus.RENTED
+        self.movie_copy.save(update_fields=["status"])
+        response = self.client.get(self.url)
+        self.assertContains(response, "All movie copies are currently out of stock.")
+
+    def test_damaged_copy_cannot_be_rented(self):
+        self.client.force_login(self.staff_user)
+        self.movie_copy.status = MovieCopy.AvailabilityStatus.DAMAGED
+        self.movie_copy.save(update_fields=["status"])
+        response = self.client.post(self.url, {
+            "customer": self.customer.pk,
+            "movie_copy": self.movie_copy.pk,
+            "due_date": timezone.localdate().isoformat(),
+        })
+        self.assertContains(response, "Unable to process rental.")
+        self.assertFalse(Rental.objects.filter(movie_copy=self.movie_copy).exists())
+        self.movie_copy.refresh_from_db()
+        self.assertEqual(self.movie_copy.status, MovieCopy.AvailabilityStatus.DAMAGED)
+
+    def test_invalid_due_date_preserves_inventory(self):
+        self.client.force_login(self.staff_user)
+        response = self.client.post(self.url, {
+            "customer": self.customer.pk,
+            "movie_copy": self.movie_copy.pk,
+            "due_date": (timezone.localdate() - timedelta(days=1)).isoformat(),
+        })
+        self.assertContains(response, "The due date cannot be in the past.")
+        self.assertFalse(Rental.objects.filter(movie_copy=self.movie_copy).exists())
+        self.movie_copy.refresh_from_db()
+        self.assertEqual(self.movie_copy.status, MovieCopy.AvailabilityStatus.AVAILABLE)
 
 
 class InventoryStatusSignalTests(TestCase):
