@@ -35,4 +35,9 @@ urlpatterns = [
         views.return_rental,
         name="return_rental",
     ),
+    path(
+        "staff/payments/summary/",
+        views.payment_summary_report,
+        name="payment_summary_report",
+    ),
 ]
