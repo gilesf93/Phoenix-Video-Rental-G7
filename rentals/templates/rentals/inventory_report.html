@@ -1,0 +1,65 @@
+
+{% extends "core/base.html" %}
+
+{% block content %}
+
+<h1>Inventory Report</h1>
+
+<p>Total Copies: {{ total_copies }}</p>
+<p>Available Copies: {{ available_copies }}</p>
+<p>Rented Copies: {{ rented_copies }}</p>
+<p>Unavailable Copies: {{ unavailable_copies }}</p>
+
+<h3>Movie Summary</h3>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Movie Title</th>
+            <th>Total Copies</th>
+            <th>Available Copies</th>
+            <th>Rented Copies</th>
+            <th>Unavailable Copies</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for movie in movies %}
+        <tr>
+            <td>{{ movie.title }}</td>
+            <td>{{ movie.total_copies }}</td>
+            <td>{{ movie.available_copies }}</td>
+            <td>{{ movie.rented_copies }}</td>
+            <td>{{ movie.unavailable_copies }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h3>Individual Movie Copies</h3>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Movie Title</th>
+            <th>Inventory ID</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for copy in copies %}
+        <tr>
+            <td>{{ copy.movie.title }}</td>
+            <td>{{ copy.id }}</td>
+            <td>{{ copy.get_status_display }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="3">No inventory found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
