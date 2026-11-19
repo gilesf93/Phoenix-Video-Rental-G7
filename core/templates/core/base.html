@@ -39,7 +39,12 @@
                         {% if user.is_staff %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'rentals:staff_rental_dashboard' %}">
-                                    Rentals
+                                Rentals
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'rentals:payment_summary_report' %}">
+                                Payment Summary
                                 </a>
                             </li>
                             <li class="nav-item">
