@@ -1,65 +1,113 @@
-
 {% extends "core/base.html" %}
 
+{% block title %}Inventory Report | Phoenix Video Rental{% endblock %}
+
 {% block content %}
+<h1 class="mb-4">Inventory Report</h1>
 
-<h1>Inventory Report</h1>
+<div class="row row-cols-2 row-cols-lg-4 g-3 mb-4">
+    <div class="col">
+        <div class="card h-100 border-warning-subtle bg-warning-subtle shadow-sm">
+            <div class="card-body text-warning-emphasis">
+                <div class="fw-semibold">Total Copies</div>
+                <div class="fs-2 fw-bold">{{ total_copies }}</div>
+            </div>
+        </div>
+    </div>
 
-<p>Total Copies: {{ total_copies }}</p>
-<p>Available Copies: {{ available_copies }}</p>
-<p>Rented Copies: {{ rented_copies }}</p>
-<p>Unavailable Copies: {{ unavailable_copies }}</p>
+    <div class="col">
+        <div class="card h-100 border-success-subtle bg-success-subtle shadow-sm">
+            <div class="card-body text-success-emphasis">
+                <div class="fw-semibold">Available</div>
+                <div class="fs-2 fw-bold">{{ available_copies }}</div>
+            </div>
+        </div>
+    </div>
 
-<h3>Movie Summary</h3>
+    <div class="col">
+        <div class="card h-100 border-primary-subtle bg-primary-subtle shadow-sm">
+            <div class="card-body text-primary-emphasis">
+                <div class="fw-semibold">Rented</div>
+                <div class="fs-2 fw-bold">{{ rented_copies }}</div>
+            </div>
+        </div>
+    </div>
 
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>Movie Title</th>
-            <th>Total Copies</th>
-            <th>Available Copies</th>
-            <th>Rented Copies</th>
-            <th>Unavailable Copies</th>
-        </tr>
-    </thead>
+    <div class="col">
+        <div class="card h-100 border-danger-subtle bg-danger-subtle shadow-sm">
+            <div class="card-body text-danger-emphasis">
+                <div class="fw-semibold">Unavailable</div>
+                <div class="fs-2 fw-bold">{{ unavailable_copies }}</div>
+            </div>
+        </div>
+    </div>
+</div>
 
-    <tbody>
-        {% for movie in movies %}
-        <tr>
-            <td>{{ movie.title }}</td>
-            <td>{{ movie.total_copies }}</td>
-            <td>{{ movie.available_copies }}</td>
-            <td>{{ movie.rented_copies }}</td>
-            <td>{{ movie.unavailable_copies }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<h2 class="h4 mb-3">Movie Summary</h2>
 
-<h3>Individual Movie Copies</h3>
+<div class="table-responsive mb-4">
+    <table class="table table-bordered table-striped align-middle mb-0">
+        <thead class="table-dark">
+            <tr>
+                <th scope="col">Movie Title</th>
+                <th scope="col" class="text-end">Total Copies</th>
+                <th scope="col" class="text-end">Available Copies</th>
+                <th scope="col" class="text-end">Rented Copies</th>
+                <th scope="col" class="text-end">Unavailable Copies</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for movie in movies %}
+                <tr>
+                    <th scope="row">{{ movie.title }}</th>
+                    <td class="text-end">{{ movie.total_copies }}</td>
+                    <td class="text-end">{{ movie.available_copies }}</td>
+                    <td class="text-end">{{ movie.rented_copies }}</td>
+                    <td class="text-end">{{ movie.unavailable_copies }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="5" class="text-body-secondary">No movies found.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>Movie Title</th>
-            <th>Inventory ID</th>
-            <th>Status</th>
-        </tr>
-    </thead>
+<h2 class="h4 mb-3">Individual Movie Copies</h2>
 
-    <tbody>
-        {% for copy in copies %}
-        <tr>
-            <td>{{ copy.movie.title }}</td>
-            <td>{{ copy.id }}</td>
-            <td>{{ copy.get_status_display }}</td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="3">No inventory found.</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-
+<div class="table-responsive">
+    <table class="table table-bordered table-striped align-middle mb-0">
+        <thead class="table-dark">
+            <tr>
+                <th scope="col">Movie Title</th>
+                <th scope="col">Inventory ID</th>
+                <th scope="col">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for copy in copies %}
+                <tr>
+                    <td>{{ copy.movie.title }}</td>
+                    <td>{{ copy.id }}</td>
+                    <td>
+                        {% if copy.status == "available" %}
+                            <span class="badge text-bg-success">{{ copy.get_status_display }}</span>
+                        {% elif copy.status == "rented" %}
+                            <span class="badge text-bg-primary">{{ copy.get_status_display }}</span>
+                        {% elif copy.status == "damaged" %}
+                            <span class="badge text-bg-danger">{{ copy.get_status_display }}</span>
+                        {% else %}
+                            <span class="badge text-bg-secondary">{{ copy.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="3" class="text-body-secondary">No inventory found.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endblock %}

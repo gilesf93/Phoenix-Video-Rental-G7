@@ -4,13 +4,15 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h2>My Rental History</h2>
+    <header class="rounded-4 bg-dark bg-gradient p-4 mb-4 shadow-sm">
+        <h1 class="h2 fw-bold text-warning mb-0">My Rental History</h1>
+    </header>
 
     <h3 class="mt-4">Rentals</h3>
 
     {% if rentals %}
-        <table class="table">
-            <thead>
+    <table class="table table-striped align-middle">
+        <thead class="table-dark">
                 <tr>
                     <th>Movie</th>
                     <th>Rental Date</th>
@@ -21,7 +23,7 @@
             <tbody>
                 {% for rental in rentals %}
                 <tr>
-                    <td>{{ rental.movie_copy }}</td>
+                    <td>{{ rental.movie_copy.movie.title }}</td>
                     <td>{{ rental.rental_date }}</td>
                     <td>{{ rental.due_date }}</td>
 

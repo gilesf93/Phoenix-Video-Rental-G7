@@ -1,7 +1,15 @@
 {% extends "core/base.html" %}
+{% load static %}
 
 {% block content %}
-<h1>Movie Catalog</h1>
+<section class="rounded-4 bg-dark text-white shadow-sm p-4 p-md-5 mb-4"
+    style="background-image: linear-gradient(90deg, rgba(0, 0, 0, .85), rgba(0, 0, 0, .2)),
+           url('{% static 'catalog/images/movies-banner.png' %}');
+           background-size: cover;
+           background-position: right center;">
+    <h1 class="display-5 fw-bold text-warning mb-2">Movies</h1>
+    <p class="lead mb-0">Find your next movie night pick.</p>
+</section>
 
 <form method="get" class="mb-4">
     <div class="row g-3">
@@ -55,33 +63,43 @@
     </div>
 </form>
 
-{% for movie in movies %}
-    <div class="card mb-3">
-        <div class="card-body">
+<div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
+    {% for movie in movies %}
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h2 class="h5 card-title">
+                        <a href="{% url 'catalog:movie_detail' movie.pk %}"
+                           class="link-dark">
+                            {{ movie.title }}
+                        </a>
+                    </h2>
 
-            <h3 class="card-title">
-                <a href="{% url 'catalog:movie_detail' movie.pk %}">
-                    {{ movie.title }}
-                </a>
-            </h3>
+                    <p class="mb-2">
+                        <strong>Release Year:</strong> {{ movie.release_year }}
+                    </p>
 
-            <p><strong>Release Year:</strong> {{ movie.release_year }}</p>
-            <p><strong>Rating:</strong> {{ movie.mpaa_rating }}</p>
+                    <p class="mb-2">
+                        <strong>Rating:</strong>
+                        <span class="badge text-bg-warning">{{ movie.mpaa_rating }}</span>
+                    </p>
 
-            <p>
-                <strong>Genres:</strong>
-                {% for genre in movie.genres.all %}
-                    {{ genre.name }}{% if not forloop.last %}, {% endif %}
-                {% empty %}
-                    No genre listed
-                {% endfor %}
-            </p>
-
+                    <p class="mb-0">
+                        <strong>Genres:</strong>
+                        {% for genre in movie.genres.all %}
+                            {{ genre.name }}{% if not forloop.last %}, {% endif %}
+                        {% empty %}
+                            No genre listed
+                        {% endfor %}
+                    </p>
+                </div>
+            </div>
         </div>
-    </div>
-
-{% empty %}
-    <p>No movies matched your search.</p>
-{% endfor %}
+    {% empty %}
+        <div class="col-12">
+            <p class="alert alert-light border mb-0">No movies matched your search.</p>
+        </div>
+    {% endfor %}
+</div>
 
 {% endblock %}
