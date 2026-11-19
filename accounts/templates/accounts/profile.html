@@ -1,21 +1,42 @@
 {% extends "core/base.html" %}
 
-{% block title %}My Profile{% endblock %}
+{% block title %}My Profile | Phoenix Video Rental{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1>My Profile</h1>
-
-    <div class="card mt-4">
-        <div class="card-body">
-            <h5 class="card-title">Account Information</h5>
-
-            <p><strong>Username:</strong> {{ customer.username }}</p>
-            <p><strong>First Name:</strong> {{ customer.first_name }}</p>
-            <p><strong>Last Name:</strong> {{ customer.last_name }}</p>
-            <p><strong>Email:</strong> {{ customer.email }}</p>
-        </div>
+<section class="card mx-auto my-4 shadow-sm overflow-hidden" style="max-width: 720px;">
+    <div class="bg-dark bg-gradient text-white p-4">
+        <h1 class="h2 text-warning mb-1">My Profile</h1>
+        <p class="mb-0">{{ user.get_username }}</p>
     </div>
-</div>
+
+    <div class="card-body p-4">
+        <h2 class="h5 mb-3">Account Information</h2>
+
+        <dl class="row g-3 mb-0">
+            <div class="col-sm-6">
+                <dt class="small text-body-secondary">First Name</dt>
+                <dd class="mb-0">{{ user.first_name|default:"Not provided" }}</dd>
+            </div>
+
+            <div class="col-sm-6">
+                <dt class="small text-body-secondary">Last Name</dt>
+                <dd class="mb-0">{{ user.last_name|default:"Not provided" }}</dd>
+            </div>
+
+            <div class="col-12">
+                <dt class="small text-body-secondary">Email</dt>
+                <dd class="mb-0 text-break">{{ user.email|default:"Not provided" }}</dd>
+            </div>
+        </dl>
+        {% if user.is_staff %}
+        <div class="border-top mt-4 pt-3">
+            <a class="btn btn-warning fw-semibold" href="{% url 'admin:index' %}">
+                Admin Dashboard
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
 {% endblock %}
 

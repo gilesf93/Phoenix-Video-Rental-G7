@@ -4,7 +4,20 @@
 
 {% block content %}
 <div class="text-center">
-    <h1>Welcome to Phoenix Video Rental</h1>
+<section class="rounded-4 bg-dark bg-gradient text-white text-center shadow-sm px-3 py-5 my-4">
+    <h1 class="display-5 fw-bold text-warning mb-3">
+        Welcome to Phoenix Video Rental
+    </h1>
+    <p class="lead text-white-50 mb-4">
+        Browse our movies and manage your rentals.
+    </p>
+
+    <a class="btn btn-warning fw-semibold mb-3" href="{% url 'catalog:movie_list' %}">
+        Browse Movies
+    </a>
+
+    {# Paste your existing welcome message and login/logout block here. #}
+</section>
 
     <p class="lead">
         Browse our movies and manage your rentals.
