@@ -4,6 +4,9 @@
 
 {% block content %}
 <h1 class="mb-4">Rental Dashboard</h1>
+<a href="{% url 'rentals:create_rental' %}" class="btn btn-warning fw-semibold mb-4">
+    Create Rental
+</a>
 
 <h2 class="h4 rounded bg-primary-subtle text-primary-emphasis px-3 py-2 mb-3">
     Active Rentals
